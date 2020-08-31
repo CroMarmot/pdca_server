@@ -1,11 +1,12 @@
+use futures::Future;
+
 use mongodb::{
     bson::{doc, Document},
     error::Error,
+    options::ClientOptions,
     results::InsertOneResult,
-    Collection,
+    Client, Collection,
 };
-
-use futures::Future;
 
 #[derive(Clone)]
 pub struct UserService {

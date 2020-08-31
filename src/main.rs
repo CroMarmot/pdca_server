@@ -6,6 +6,7 @@ use service::UserService;
 
 mod controller;
 mod service;
+mod dbm;
 
 pub struct ServiceContainer {
     user: UserService,
