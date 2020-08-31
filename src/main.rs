@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use serde::{Serialize,Deserialize};
 use log::info;
 
@@ -43,6 +43,7 @@ fn init_logger() {
         .init();
     info!("env_logger initialized.");
 }
+
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {

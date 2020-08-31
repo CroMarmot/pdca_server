@@ -4,46 +4,39 @@ use mongodb::{
     results::InsertOneResult,
     Collection,
     options::ClientOptions,
+    Database,
     Client,
 };
 
 pub struct DBManager {
+    db: Database,
 }
 
 impl DBManager{
-    pub async fn insert_one(&self) -> Result<InsertOneResult,Error>{
+    pub async fn insert_one(&self, coll_name:&str) -> Result<InsertOneResult,Error>{
         // Parse a connection string into an options struct.
-        let client = Client::with_uri_str("mongodb://localhost:27017/").await?;
-
-        println!("!!");
-        let db = client.database("some_db");
-        for coll_name in db.list_collection_names(None).await? {
-            println!("collection: {}", coll_name);
-        }
-
-        let coll = db.collection("some-coll");
+        let coll = self.db.collection(coll_name);
         let result = coll.insert_one(doc! { "x": 1 }, None).await?;
         println!("{:#?}", result);
-
         Ok(result)
-    }
-    pub fn hey(&self){
-        println!("hey func");
     }
 }
 
-pub async fn build_dbm() -> Result<DBManager,Error> {
-    println!("build");
-    // Get a handle to the deployment.
+pub async fn build_dbm(db_name:&str) -> Result<DBManager,Error> {
     let client = Client::with_uri_str("mongodb://localhost:27017/").await?;
 
-    println!("!!");
-    // // List the names of the databases in that deployment.
-    let db_names = client.list_database_names(None,None).await?;
-    for db_name in db_names {
-        println!("{}", db_name);
-    }
-    println!("??");
+    // println!("DBs:");
+    // // // List the names of the databases in that deployment.
+    // let db_names = client.list_database_names(None,None).await?;
+    // for db_name in db_names {
+    //     println!("\t{}", db_name);
+    // }
 
-    Ok(DBManager { })
+    // println!("Colections:");
+    let db = client.database(db_name);
+    // for coll_name in db.list_collection_names(None).await? {
+    //     println!("\t{}", coll_name);
+    // }
+
+    Ok(DBManager { db })
 }

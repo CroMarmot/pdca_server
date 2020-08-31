@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{get, web, HttpResponse, Responder};
 use serde::Deserialize;
 
 use super::dbm::build_dbm;
@@ -8,22 +8,15 @@ pub struct User {
     name: String,
 }
 
+#[get("/hello")]
+pub async fn index3() -> impl Responder {
+    HttpResponse::Ok().body("Hey there!")
+}
+
 pub async fn index0() -> impl Responder {
-    let dbm = build_dbm().await.unwrap();
-    dbm.hey();
-    println!("what");
-    dbm.insert_one().await.unwrap();
-    println!("happen");
+    let dbm = build_dbm("pdca_v1").await.unwrap();
+    dbm.insert_one("some-coll").await.unwrap();
 
-    // let client = Client::with_uri_str("mongodb://localhost:27017/").await?;
-    // let dbm = client.database("some_db");
-    // for coll_name in dbm.list_collection_names(None).await? {
-    //     println!("collection: {}", coll_name);
-    // }
-
-    // let coll = dbm.collection("some-coll");
-    // let result = coll.insert_one(doc! { "x": 1 }, None).await?;
-    // println!("{:#?}", result);
     HttpResponse::Ok().body("Hello world!")
 }
 
