@@ -70,12 +70,24 @@ async fn main() -> std::io::Result<()> {
         //        count: Mutex::new(0)
         //}) // static
             .app_data(MutState.clone())
-            .route("/", web::get().to(controller::index0))
-            .route("/name", web::get().to(controller::index_name))
-            .route("/again", web::get().to(controller::again))
-            .route("/dbDemo", web::get().to(controller::db_demo))
+            .service(web::scope("/api")
+                .route("/", web::get().to(controller::index0))
+                .route("/op1",web::get().to(controller::op1))
+                .route("/name", web::get().to(controller::index_name))
+                .route("/again", web::get().to(controller::again))
+                .route("/dbDemo", web::get().to(controller::db_demo))
+                .route("/sleep_demo", web::get().to(controller::sleep_demo))
+                .route("/custom_resp",web::get().to(controller::custom_resp))
+                .route("/custom_req/{userid}/{friend}",web::get().to(controller::custom_req))
+                .route("/custom_json",web::post().to(controller::custom_json))
+                .route("/db_custom",web::post().to(controller::db_custom))
+                .route("/db_query",web::post().to(controller::db_query))
+            )
+
     })
+    // .workers(4)
     .bind("0.0.0.0:8088")?
+    .shutdown_timeout(60)
     .run()
     .await
 }
