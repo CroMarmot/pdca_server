@@ -3,6 +3,7 @@ use serde::{Serialize,Deserialize};
 use log::info;
 
 use service::UserService;
+use std::sync::Mutex;
 
 mod controller;
 mod service;
@@ -18,8 +19,16 @@ impl ServiceContainer {
     }
 }
 
+// each ins for each thread
 pub struct AppState {
-    service_container: ServiceContainer,
+    // service_container: ServiceContainer,
+    count: Mutex<i32>,
+}
+
+// share and mut between thread
+pub struct AppMutState {
+    // service_container: ServiceContainer,
+    count: Mutex<i32>,
 }
 
 fn init_logger() {
@@ -48,10 +57,23 @@ fn init_logger() {
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     init_logger();
-    HttpServer::new(|| {
+    // Http server constructs an application instance for each thread
+    let MutState = web::Data::new(AppMutState {
+        count: Mutex::new(0),
+    });
+
+
+    HttpServer::new(move || {
         App::new()
+            // static
+        //    .data(AppState {
+        //        count: Mutex::new(0)
+        //}) // static
+            .app_data(MutState.clone())
             .route("/", web::get().to(controller::index0))
+            .route("/name", web::get().to(controller::index_name))
             .route("/again", web::get().to(controller::again))
+            .route("/dbDemo", web::get().to(controller::db_demo))
     })
     .bind("0.0.0.0:8088")?
     .run()

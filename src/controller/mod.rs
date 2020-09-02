@@ -1,7 +1,9 @@
 use actix_web::{get, web, HttpResponse, Responder};
+use std::sync::{Mutex, Arc};
 use serde::Deserialize;
 
 use super::dbm::build_dbm;
+use crate::{AppState, AppMutState};
 
 #[derive(Deserialize)]
 pub struct User {
@@ -14,13 +16,23 @@ pub async fn index3() -> impl Responder {
 }
 
 pub async fn index0() -> impl Responder {
-    let dbm = build_dbm("pdca_v1").await.unwrap();
-    dbm.insert_one("some-coll").await.unwrap();
-
     HttpResponse::Ok().body("Hello world!")
 }
 
+pub async fn index_name(data: web::Data<AppMutState>) -> String {
+    let mut count =    data.count.lock().unwrap();
+    *count+=1;
+    format!("Hello {}!",count) // <- response with app_name
+}
+
 pub async fn again() -> impl Responder {
+    HttpResponse::Ok().body("Hello world again!")
+}
+
+pub async fn db_demo() -> impl Responder{
+    let dbm = build_dbm("pdca_v1").await.unwrap();
+    dbm.insert_one("some-coll").await.unwrap();
+
     HttpResponse::Ok().body("Hello world again!")
 }
 
