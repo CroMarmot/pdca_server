@@ -7,6 +7,8 @@ use tokio;
 use super::dbm::build_dbm;
 use crate::{AppState, AppMutState};
 use futures::future::{ready, Ready};
+use crate::dbm::DBManager;
+use std::future::Future;
 
 // 返回的
 #[derive(Serialize)]
@@ -83,23 +85,41 @@ pub async fn db_demo() -> impl Responder{
 // }
 
 
+// MyObj 支持 JSON 返回
 // Responder
-impl Responder for MyObj {
-    type Error = Error;
-    type Future = Ready<Result<HttpResponse, Error>>;
+// TODO 任意结构返回json
+// impl Responder for MyObj{
+//     type Error = Error;
+//     type Future = Ready<Result<HttpResponse, Error>>;
+//
+//     fn respond_to(self, _req: &HttpRequest) -> Self::Future {
+//         let body = serde_json::to_string(&self).unwrap();
+//         // Create response and set content type
+//         ready(Ok(HttpResponse::Ok()
+//             .content_type("application/json")
+//             .body(body)))
+//     }
+// }
 
-    fn respond_to(self, _req: &HttpRequest) -> Self::Future {
-        let body = serde_json::to_string(&self).unwrap();
+// impl<T> Responder for T
+//     where T: Serialize
+// {
+//     type Error = Error;
+//     type Future = Ready<Result<HttpResponse, Error>>;
+//
+//     fn respond_to(self, _req: &HttpRequest) -> Self::Future {
+//         let body = serde_json::to_string(&self).unwrap();
+//         // Create response and set content type
+//         ready(Ok(HttpResponse::Ok()
+//             .content_type("application/json")
+//             .body(body)))
+//     }
+// }
 
-        // Create response and set content type
-        ready(Ok(HttpResponse::Ok()
-            .content_type("application/json")
-            .body(body)))
-    }
-}
 
+// fetch("/api/custom_resp",{headers: {'Content-Type': 'application/json'},method: 'GET'}).then((data)=>data.text()).then(console.log);
 pub async fn custom_resp() -> impl Responder {
-    MyObj { name: "user" }
+   web::Json( MyObj { name: "user" } )
 }
 
 
@@ -109,33 +129,43 @@ pub struct Info {
     friend: String,
 }
 
+// 自定义路径
 // extract path info using serde
 pub async fn custom_req(info: web::Path<Info>) -> actix_web::Result<String> {
     Ok(format!("Welcome {}, userid {}!", info.friend, info.userid))
 }
 
-#[derive(Serialize,Deserialize)]
+#[derive(Serialize,Deserialize,Debug)]
 pub struct CustJson{
     username: String,
 }
 
-// fetch("/custom_json",{headers: {'Content-Type': 'application/json'},method: 'POST',body:JSON.stringify({username:'?'})}).then(console.log)
+// fetch("/api/custom_json",{headers: {'Content-Type': 'application/json'},method: 'POST',body:JSON.stringify({username:'?'})}).then((data)=>data.text()).then(console.log);
+// 请求自定义json
 pub async fn custom_json(info: web::Json<CustJson>) -> actix_web::Result<String> {
     Ok(format!("Welcome {}!", info.username))
 }
 
+// TODO db update 和 类型不匹配处理
 pub async fn db_custom(info: web::Json<CustJson>) -> impl Responder{
-    let dbm = build_dbm("pdca_v1").await.unwrap();
+    let dbm:DBManager = build_dbm("pdca_v1").await.unwrap();
     let info_cust:CustJson = info.into_inner();
-    dbm.insert_custom("some-coll", info_cust).await.unwrap();
+    // dbm.insert_custom("some-coll", info_cust).await.unwrap();
+    dbm.insert_one_custom("some-coll", info_cust).await.unwrap();
 
     HttpResponse::Ok().body("ok")
 }
 
+// 查询
 pub async fn db_query() -> impl Responder{
-    let dbm = build_dbm("pdca_v1").await.unwrap();
+    let dbm:DBManager = build_dbm("pdca_v1").await.unwrap();
     println!("db_query");
-    let res:Vec<CustJson> = dbm.find_data("some-coll").await.unwrap();
 
-    HttpResponse::Ok().body("ok")
+    let res:Vec<CustJson> = dbm.find_data("some-coll").await;
+
+    println!("{:#?}", res);
+    // HttpResponse::Ok().body("ok")
+    web::Json(res)
 }
+
+// TODO document 增加 id
