@@ -1,5 +1,6 @@
 use actix_web::{get, web, HttpResponse, Responder, HttpRequest,Error};
 use std::sync::{Mutex, Arc};
+use mongodb::{bson::oid::ObjectId};
 use serde::{Serialize,Deserialize};
 use std::time::Duration;
 use tokio;
@@ -137,6 +138,9 @@ pub async fn custom_req(info: web::Path<Info>) -> actix_web::Result<String> {
 
 #[derive(Serialize,Deserialize,Debug)]
 pub struct CustJson{
+    // https://serde.rs/field-attrs.html
+    #[serde(rename = "_id",skip_serializing)]
+    id: Option<ObjectId>,
     username: String,
 }
 

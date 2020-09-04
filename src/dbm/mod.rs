@@ -83,12 +83,12 @@ impl DBManager{
     where T:DeserializeOwned
     {
         let coll = self.db.collection(coll_name);
-        let mut cursor = coll.find(None,None).await.unwrap();
-        while let Some(doc) = cursor.next().await {
-            println!("{}", doc.unwrap())
-        }
-        let results: Vec<Result<Document>> = cursor.collect().await;
-        println!("{:#?}", results);
+        // let mut cursor = coll.find(None,None).await.unwrap();
+        // while let Some(doc) = cursor.next().await {
+        //     println!("{}", doc.unwrap())
+        // }
+        // let results: Vec<Result<Document>> = cursor.collect().await;
+        // println!("{:#?}", results);
 
         coll.find(None, None)
             .await
