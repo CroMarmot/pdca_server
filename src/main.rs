@@ -1,4 +1,5 @@
 use actix_web::{web, App, HttpServer};
+use actix_web::middleware::Logger;
 use log::info;
 
 use crate::dbm::{build_dbm, DBManager};
@@ -58,6 +59,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .data(AppState {
                 coll_daily: String::from("pdca_daily"),
             })
