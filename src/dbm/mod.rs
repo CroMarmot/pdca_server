@@ -1,21 +1,18 @@
 use futures::stream::StreamExt;
-use std::fmt::Debug;
 use mongodb::{
-    bson::{from_bson, doc,Bson, Document,to_bson},
-    error::{Error,Result},
+    bson::{doc, from_bson, to_bson, Bson, Document},
+    error::Result,
+    options::{FindOneAndReplaceOptions, ReturnDocument::After},
     results::InsertOneResult,
-    Collection,
-    options::ClientOptions,
-    Database,
-    Client,
-    Cursor
+    Client, Database,
 };
-use crate::controller::CustJson;
-use serde::{Serialize, Deserialize,de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
+use std::fmt::Debug;
 
 // https://docs.rs/mongodm/0.4.2/src/mongodm/repository.rs.html
 fn h_model_to_doc<T>(model: &T) -> Result<Document>
-    where T:Serialize
+where
+    T: Serialize,
 {
     let bson = to_bson(&model)?;
     if let Bson::Document(doc) = bson {
@@ -27,7 +24,6 @@ fn h_model_to_doc<T>(model: &T) -> Result<Document>
         )))
     }
 }
-
 
 #[derive(Debug)]
 pub struct DBManager {
@@ -46,8 +42,8 @@ pub struct DBManager {
 //     }
 // }
 
-impl DBManager{
-    pub async fn insert_one(&self, coll_name:&str) -> Result<InsertOneResult>{
+impl DBManager {
+    pub async fn insert_one(&self, coll_name: &str) -> Result<InsertOneResult> {
         // Parse a connection string into an options struct.
         let coll = self.db.collection(coll_name);
         let result = coll.insert_one(doc! { "x": 1 }, None).await?;
@@ -55,32 +51,47 @@ impl DBManager{
         Ok(result)
     }
 
-    pub async fn insert_custom<T>(&self, coll_name:&str, cust_item: T) -> Result<InsertOneResult>
-        where T:Serialize
+    pub async fn insert_one_custom<T>(&self, coll_name: &str, sample: T) -> Result<InsertOneResult>
+    where
+        T: Serialize,
     {
-        // Parse a connection string into an options struct.
-        let coll:Collection = self.db.collection(coll_name);
-        let result = coll.insert_one( doc!{"value":to_bson(&cust_item).unwrap()}, None).await?;
+        let coll = self.db.collection(coll_name);
+        let result = coll.insert_one(h_model_to_doc(&sample)?, None).await?;
+
+        // let result = coll.insert_one( doc!{"value":to_bson(&cust_item).unwrap()}, None).await?;
         println!("{:#?}", result);
         Ok(result)
     }
 
+    pub async fn insert_or_update_one<T>(
+        &self,
+        coll_name: &str,
+        filter: Document,
+        sample: T,
+    ) -> Result<Document>
+    where
+        T: Serialize,
+    {
+        let coll = self.db.collection(coll_name);
 
-// 插入不对称 多个 value
-     pub async fn insert_one_custom<T>(&self, coll_name:&str , sample: T) -> Result<InsertOneResult>
-         where T:Serialize
-     {
-         let coll:Collection = self.db.collection(coll_name);
-         let result = coll.insert_one(h_model_to_doc(&sample)?,None).await?;
-
-         // let result = coll.insert_one( doc!{"value":to_bson(&cust_item).unwrap()}, None).await?;
-         println!("{:#?}", result);
-         Ok(result)
-     }
+        //https://docs.mongodb.com/manual/reference/method/db.collection.findOneAndReplace/
+        let options = FindOneAndReplaceOptions::builder()
+            .upsert(Some(true))
+            .return_document(Some(After))
+            .build();
+        println!("{:#?}", options);
+        let result = coll
+            .find_one_and_replace(filter, h_model_to_doc(&sample)?, Some(options))
+            .await?
+            .unwrap();
+        println!("{:#?}", result);
+        Ok(result)
+    }
 
     // https://github.com/mongodb/mongo-rust-driver/blob/master/src/cursor/mod.rs#L45-L60
-    pub async fn find_data<T >(&self, coll_name:&str) -> Vec<T>
-    where T:DeserializeOwned
+    pub async fn find_data<T>(&self, coll_name: &str) -> Vec<T>
+    where
+        T: DeserializeOwned,
     {
         let coll = self.db.collection(coll_name);
         // let mut cursor = coll.find(None,None).await.unwrap();
@@ -98,13 +109,26 @@ impl DBManager{
             .collect()
             .await
 
-//         println!("{:#?}", outputs);
-//         Ok(outputs)
+        //         println!("{:#?}", outputs);
+        //         Ok(outputs)
+    }
+
+    // https://github.com/mongodb/mongo-rust-driver/blob/master/src/cursor/mod.rs#L45-L60
+    pub async fn find_one<T>(&self, coll_name: &str, document: Document) -> Option<T>
+    where
+        T: DeserializeOwned,
+    {
+        let coll = self.db.collection(coll_name);
+
+        coll.find_one(document, None)
+            .await
+            .unwrap()
+            .map(|doc| from_bson(Bson::Document(doc)).expect("Decode error"))
     }
 }
 
-pub async fn build_dbm(db_name:&str) -> Result<DBManager> {
-    let client = Client::with_uri_str("mongodb://localhost:27017/").await?;
+pub async fn build_dbm(uri: &str, db_name: &str) -> Result<DBManager> {
+    let client = Client::with_uri_str(uri).await?;
 
     // println!("DBs:");
     // // // List the names of the databases in that deployment.
@@ -118,6 +142,5 @@ pub async fn build_dbm(db_name:&str) -> Result<DBManager> {
     // for coll_name in db.list_collection_names(None).await? {
     //     println!("\t{}", coll_name);
     // }
-
     Ok(DBManager { db })
 }

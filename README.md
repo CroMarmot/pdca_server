@@ -12,7 +12,6 @@ mongodb
 cargo run
 ```
 
-
 ## Base framework
 
 [actix-web](https://actix.rs/)
@@ -33,5 +32,5 @@ location / {
 ```bash
 mongo
 use pdca_v1
-db["some-coll"].find()
+db["pdca_daily"].find()
 ```
