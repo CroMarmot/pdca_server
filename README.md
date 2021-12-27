@@ -38,3 +38,10 @@ mongo
 use pdca_v1
 db["pdca_daily"].find()
 ```
+
+
+## BUG
+
+后台关掉没有 stdout时会炸
+
+临时方案 `./server 1>stdout.log 2>stderr.log &`

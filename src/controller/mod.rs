@@ -1,4 +1,5 @@
-use crate::model::{DailyKey, DailyPDCA};
+use crate::model::orm::{ DailyPDCA};
+use crate::model::req::{ DailyKey};
 use crate::{AppMutState, AppState};
 use actix_web::{web, Either, HttpResponse, Responder};
 use mongodb::bson::doc;
@@ -46,6 +47,11 @@ pub async fn add_daily_pdca(
 }
 type GetDailyPdcaResult = Either<web::Json<DailyPDCA>, HttpResponse>;
 
+// fetch("/api/get_daily_pdca",{headers: {'Content-Type': 'application/json'},body:JSON.stringify({
+//  date: "2020-10-15"
+// }),method: 'POST'})
+// .then((data)=>data.text())
+// .then(console.log);
 pub async fn get_daily_pdca(
     const_data: web::Data<AppState>,
     data: web::Data<AppMutState>,

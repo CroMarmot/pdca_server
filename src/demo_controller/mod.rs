@@ -13,7 +13,9 @@ struct MyObj {
     name: &'static str,
 }
 
+// http://127.0.0.1:8088/api/demo/
 pub async fn index0() -> impl Responder {
+    println!("index0");
     HttpResponse::Ok().body("Hello world!")
 }
 
@@ -44,7 +46,7 @@ pub async fn db_demo(data: web::Data<AppMutState>) -> impl Responder {
     HttpResponse::Ok().body("Hello world again!")
 }
 
-// fetch("/api/custom_resp",{headers: {'Content-Type': 'application/json'},method: 'GET'}).then((data)=>data.text()).then(console.log);
+// fetch("/api/demo/custom_resp",{headers: {'Content-Type': 'application/json'},method: 'GET'}).then((data)=>data.text()).then(console.log);
 pub async fn custom_resp() -> impl Responder {
     web::Json(MyObj { name: "user" })
 }
@@ -69,7 +71,7 @@ pub struct CustJson {
     username: String,
 }
 
-// fetch("/api/custom_json",{headers: {'Content-Type': 'application/json'},method: 'POST',body:JSON.stringify({username:'?'})}).then((data)=>data.text()).then(console.log);
+// fetch("/api/demo/custom_json",{headers: {'Content-Type': 'application/json'},method: 'POST',body:JSON.stringify({username:'?'})}).then((data)=>data.text()).then(console.log);
 // 请求自定义json
 pub async fn custom_json(info: web::Json<CustJson>) -> actix_web::Result<String> {
     Ok(format!("Welcome {}!", info.username))

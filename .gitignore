@@ -12,3 +12,4 @@ Cargo.lock
 # IDE
 .idea
 .vscode
+*log
